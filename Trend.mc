@@ -91,8 +91,8 @@ module MyGraph{
 						var pts = serie.data;
 						if(pts.size() < 2){ return; }
 
-						var ptFirst = pts.firstDataPoint();
-						var ptLast = pts.lastDataPoint();
+						// var ptFirst = pts.firstDataPoint();
+						// var ptLast = pts.lastDataPoint();
 					
 						var yRangeMin = serie.yRangeMin; // minimal vertical range
 
