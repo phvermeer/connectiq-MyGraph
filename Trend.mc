@@ -27,7 +27,7 @@ module MyGraph{
 			if(!options.hasKey(:identifier)){ options.put(:identifier, "Graph"); }
 			Drawable.initialize(options);
 
-			if(options.hasKey(:series)){ series = options.get(:series); }
+			if(options.hasKey(:series)){ series = options.get(:series) as Array<Serie>; }
 			if(options.hasKey(:darkMode)){ setDarkMode(options.get(:darkMode) as Boolean); }
 			if(options.hasKey(:xRangeMin)){ xRangeMin = options.get(:xRangeMin) as Numeric; }
 		}

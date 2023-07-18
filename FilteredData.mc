@@ -40,10 +40,14 @@ module MyGraph{
 			onUpdated = options.get(:onUpdated) as Null|Method() as Void;
 
 			//MyFilteredList.initialize(method(:rankDataPoint) as Method(previous as Object, item as Object, next as Object) as Numeric?);
-			FilteredList.initialize(method(:rankDataPoint) as Method(ptBefore as DataPoint, pt as DataPoint , ptAfter as DataPoint) as Numeric|Null);
+			FilteredList.initialize(method(:rankDataPoint) as Method(ptBefore as Object, pt as Object , ptAfter as Object) as Numeric|Null);
 		}
 
-		function rankDataPoint(ptBefore as DataPoint, pt as DataPoint , ptAfter as DataPoint) as Numeric|Null{
+		function rankDataPoint(objBefore as Object, obj as Object , objAfter as Object) as Numeric|Null{
+			var ptBefore = objBefore as DataPoint;
+			var pt = obj as DataPoint;
+			var ptAfter = objAfter as DataPoint;
+
 			// Use VisvalingamFilter
 			// Have all points a valid numeric value
 			var yBefore = ptBefore.y;
