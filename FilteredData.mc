@@ -39,7 +39,6 @@ module MyGraph{
 			reducedCount = options.hasKey(:reducedCount) ? options.get(:reducedCount) as Number : (maxCount * 3 / 4).toNumber();
 			onUpdated = options.get(:onUpdated) as Null|Method() as Void;
 
-			//MyFilteredList.initialize(method(:rankDataPoint) as Method(previous as Object, item as Object, next as Object) as Numeric?);
 			FilteredList.initialize(method(:rankDataPoint) as Method(ptBefore as Object, pt as Object , ptAfter as Object) as Numeric|Null);
 		}
 
@@ -87,6 +86,9 @@ module MyGraph{
 		public function nextDataPoint() as DataPoint|Null{
 			return next() as DataPoint|Null;
 		}
+		function isLoading() as Boolean{
+			return bufferBusy;
+		}		
 		hidden function addToBuffer(pt as DataPoint) as Void{
 			buffer.add(pt);
 			// start timer to process the buffered items 
