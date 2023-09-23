@@ -80,8 +80,8 @@ module MyGraph{
 
 				var xFactor = 1f * innerWidth / (xMax - xMin);
 				var yFactor = -1f * innerHeight / (yMax - yMin);
-				var xOffset = locX + axisMargin - xFactor * xMin;
-				var yOffset = locY + topMargin + innerHeight - yMin * yFactor;
+				var xOffset = locX + axisMargin;
+				var yOffset = locY + topMargin + innerHeight;
 				var xPrev = null;
 				var yPrev = null;
 				
@@ -120,8 +120,8 @@ module MyGraph{
 								var screenPts = [] as Array< Array<Numeric> >;
 								while(pt != null){
 									if(pt.y != null){
-										var x = xOffset + xFactor * pt.x;
-										var y = yOffset + yFactor * pt.y as Numeric; 
+										var x = xOffset + xFactor * (pt.x - xMin);
+										var y = yOffset + yFactor * (pt.y as Numeric - yMin); 
 										if(xPrev == null){
 											// first valid point -> add additional point from bottom
 											screenPts.add([x, locY + height - axisMargin] as Array<Numeric>);
@@ -151,9 +151,9 @@ module MyGraph{
 							}else if(serie.style == DRAW_STYLE_LINE){
 								var pt = pts.firstDataPoint();
 								while(pt != null){
-									var x = xOffset + xFactor * pt.x;
+									var x = xOffset + xFactor * (pt.x - xMin);
 									if(pt.y != null){
-										var y = yOffset + yFactor * pt.y as Numeric;
+										var y = yOffset + yFactor * (pt.y as Numeric - yMin);
 										if(xPrev != null && yPrev != null){											
 											dc.drawLine(xPrev as Numeric, yPrev as Numeric, x, y);
 										}

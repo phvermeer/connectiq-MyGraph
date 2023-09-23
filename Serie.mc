@@ -24,8 +24,8 @@ module MyGraph{
 			:data as ISerieData,  // required
 			:color as ColorType, // optional
 			:style as DrawStyle, //optional
-			:markers as MarkerType,
-			:yRangeMin as Numeric,
+			:markers as MarkerType, //optional
+			:yRangeMin as Numeric, //optional
 		}){
 			data = options.hasKey(:data)
 				? options.get(:data) as ISerieData
