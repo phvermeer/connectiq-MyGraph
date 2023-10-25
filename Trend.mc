@@ -20,6 +20,10 @@ module MyGraph{
 		hidden var innerWidth as Numeric = 0;
 		hidden var innerHeight as Numeric = 0;
 		// (these values are determined when series are drawn)
+		hidden var xMin as Numeric?;
+		hidden var xMax as Numeric?;
+		hidden var yMin as Numeric?;
+		hidden var yMax as Numeric?;
 		hidden var xOffset as Numeric = 0;
 		hidden var yOffset as Numeric = 0;
 		hidden var xFactor as Numeric = 0;
@@ -38,7 +42,10 @@ module MyGraph{
 			if(!options.hasKey(:identifier)){ options.put(:identifier, "Graph"); }
 			Drawable.initialize(options);
 
-			if(options.hasKey(:series)){ series = options.get(:series) as Array<Serie>; }
+			if(options.hasKey(:series)){
+				series = options.get(:series) as Array<Serie>;
+				updateMinMax();
+			}
 			if(options.hasKey(:darkMode)){ setDarkMode(options.get(:darkMode) as Boolean); }
 			if(options.hasKey(:xRangeMin)){ xRangeMin = options.get(:xRangeMin) as Numeric; }
 		}
@@ -46,7 +53,6 @@ module MyGraph{
 		function draw(dc as Dc){
 			// collect data
 			if(series == null){ return; }
-
 			drawFrame(dc);
 			drawSeries(dc);
 		}
@@ -54,10 +60,11 @@ module MyGraph{
 		protected function drawFrame(dc as Dc) as Void{
 			var font = Graphics.FONT_XTINY;
 			var labelHeight = dc.getFontHeight(font);
-			topMargin = labelHeight + 6; // space for the markers
 			var bottomMargin = 0; // space for the min/max distance 
 			var axisWidth = 2;
 			var axisMargin = 0.5f + Math.ceil(0.5f * axisWidth); // space for the axis width
+
+			self.topMargin = labelHeight + 6; // space for the markers
 			self.leftMargin = axisMargin;
 			self.innerHeight = height - (topMargin + bottomMargin + axisMargin);
 			self.innerWidth = width - (2 * axisMargin);
@@ -70,152 +77,170 @@ module MyGraph{
 			dc.drawLine(locX, locY+height-bottomMargin, locX+width, locY+height-bottomMargin);
 			dc.drawLine(locX+width, locY+topMargin, locX+width, locY+height-bottomMargin);
 		}
-			
-		protected function drawSeries(dc as Dc) as Void{
-			// determine the generic limits (xMin, xMax, yMin, yMax)
-			if(series.size() > 0){
-				var xMinValues = [] as Array<Numeric>;
-				var xMaxValues = [] as Array<Numeric>;
-				var yMinValues = [] as Array<Numeric>;
-				var yMaxValues = [] as Array<Numeric>;
-				for(var s=0; s<series.size(); s++){
-					var data = series[0].data;
-					if(data.xMin != null){ xMinValues.add(data.xMin as Numeric); }
-					if(data.xMax != null){ xMaxValues.add(data.xMax as Numeric); }
-					if(data.yMin != null){ yMinValues.add(data.yMin as Numeric); }
-					if(data.yMax != null){ yMaxValues.add(data.yMax as Numeric); }
+
+		protected function updateMinMax() as Void{
+			// update generic min/max values
+			xMin = null;
+			xMax = null;
+			yMin = null;
+			yMax = null;
+			for(var i=0; i<series.size(); i++){
+				var serie = series[i];
+				var ptFirst = serie.ptFirst;
+				var ptLast = serie.ptLast;
+				var ptMin = serie.ptMin;
+				var ptMax = serie.ptMax;
+
+				var xMin_ = (ptFirst != null) ? ptFirst.x : null;
+				var xMax_ = (ptLast != null) ? ptLast.x : null;
+				var yMin_ = (ptMin != null) ? ptMin.y : null;
+				var yMax_ = (ptMax != null) ? ptMax.y : null;
+				if(xMin_ != null && (xMin == null || xMin_ < xMin as Numeric)){
+					xMin = xMin_ as Numeric;
 				}
-				var xMin = xMinValues.size() > 0 ? MyMath.min(xMinValues) : null;
-				var xMax = xMaxValues.size() > 0 ? MyMath.max(xMaxValues) : null;
-				var yMin = yMinValues.size() > 0 ? MyMath.min(yMinValues) : null;
-				var yMax = yMaxValues.size() > 0 ? MyMath.max(yMaxValues) : null;
+				if(xMax_ != null && (xMax == null || xMax_ < xMax as Numeric)){
+					xMax = xMax_ as Numeric;
+				}
+				if(yMin_ != null && (yMin == null || (yMin_ as Numeric) < yMin as Numeric)){
+					yMin = yMin_ as Numeric;
+				}
+				if(yMax_ != null && (yMax == null || (yMax_ as Numeric) < yMax as Numeric)){
+					yMax = yMax_ as Numeric;
+				}
+			}
+
+			// calculate factor x,y => pixels
+			if(xMin != null && xMax != null){
+				self.xFactor = innerWidth / (self.xMax-self.xMin);
+			}
+			if(yMin != null && yMax != null){
+				self.yFactor = innerHeight / (self.yMax-self.yMin);
+			}
+		}
+
+		protected function drawSeries(dc as Dc) as Void{
+			if(series.size() > 0){
+				updateMinMax();
+				var xMin = self.xMin;
+				var xMax = self.xMax;
+				var yMin = self.yMin;
+				var yMax = self.yMax;
 
 				if(yMin != null && yMax != null && xMin != null && xMax != null) {
 					if(xMin >= xMax) { return; }
 					if(yMin >= yMax) { return; }
-				}else{
-					return;
-				}
 
-				// the following values are also used when drawing the current position
-				self.xFactor = innerWidth / (xMax - xMin);
-				self.yFactor = -1 * innerHeight / (yMax - yMin);
-				self.xOffset = locX + leftMargin - xMin * xFactor;
-				self.yOffset = locY + topMargin + innerHeight - yMin * yFactor;
+					// the following values are also used when drawing the current position
+					self.xFactor = innerWidth / (xMax - xMin);
+					self.yFactor = -1 * innerHeight / (yMax - yMin);
+					self.xOffset = locX + leftMargin;
+					self.yOffset = locY + topMargin + innerHeight;
 
-				var xPrev = null;
-				var yPrev = null;
-				
-				for(var s=0; s<series.size(); s++){
-					var serie = series[s];
-					if(serie.data != null){
-						var pts = serie.data;
-						if(pts.size() < 2){ return; }
-
-						// var ptFirst = pts.firstDataPoint();
-						// var ptLast = pts.lastDataPoint();
+					var xPrev = null;
+					var yPrev = null;
 					
+					for(var s=0; s<series.size(); s++){
+						var serie = series[s];
+						if(xMax <= xMin){ return; }
+
 						var yRangeMin = serie.yRangeMin; // minimal vertical range
 
-						if((pts.size() > 1) && (xMax > xMin)){
+						if((xMax - xMin) < xRangeMin){
+							var xExtra = xRangeMin - (xMax - xMin);
+							xMax += xExtra;
+						}
 
-							if((xMax - xMin) < xRangeMin){
-								var xExtra = xRangeMin - (xMax - xMin);
-								xMax += 1.0 * xExtra;
-								xMin -= 0.0 * xExtra;
-							}
+						if((yMax - yMin) < yRangeMin){
+							var yExtra = yRangeMin - (yMax - yMin);
+							yMax += 0.8 * yExtra;
+							yMin -= 0.2 * yExtra;
+						}
 
-							if((yMax - yMin) < yRangeMin){
-								var yExtra = yRangeMin - (yMax - yMin);
-								yMax += 0.8 * yExtra;
-								yMin -= 0.2 * yExtra;
-							}
-
-							// Create an array of point with screen xy
-							var color = (serie.color != null) ? serie.color as ColorType : textColor;
-							dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-							
-							if(serie.style == DRAW_STYLE_FILLED){
-								// On null values draw the shape and start a new shape
-								var pt = pts.firstDataPoint();
-								var screenPts = [] as Array< Array<Numeric> >;
-								while(pt != null){
-									if(pt.y != null){
-										var x = xOffset + xFactor * pt.x;
-										var y = yOffset + yFactor * pt.y as Numeric; 
-										if(xPrev == null){
-											// first valid point -> add additional point from bottom
-											screenPts.add([x, locY + topMargin + innerHeight] as Array<Numeric>);
-										}
-										screenPts.add([x, y] as Array<Numeric>);
-										xPrev = x;
-										yPrev = y;
-									}else{
-										// from previous x value go down
-										if(screenPts.size() > 0){
-											// draw serie till last point
-											screenPts.add([xPrev as Numeric, locY + topMargin + innerHeight] as Array<Numeric>);
-											dc.fillPolygon(screenPts);
-										}
-										// and start a new one
-										screenPts = [] as Array< Array<Numeric> >;
-										xPrev = null;
-										yPrev = null;
+						// Create an array of point with screen xy
+						var color = (serie.color != null) ? serie.color as ColorType : textColor;
+						dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+						
+						if(serie.style == DRAW_STYLE_FILLED){
+							// On null values draw the shape and start a new shape
+							var pt = serie.reset();
+							var screenPts = [] as Array< Array<Numeric> >;
+							while(pt != null){
+								if(pt.y != null){
+									var x = xOffset + xFactor * (pt.x - xMin);
+									var y = yOffset + yFactor * (pt.y as Numeric - yMin); 
+									if(xPrev == null){
+										// first valid point -> add additional point from bottom
+										screenPts.add([x, yOffset] as Array<Numeric>);
 									}
-									pt = pts.nextDataPoint();
-								}
-								if(xPrev != null){
-									//screenPts.add([xPrev as Numeric, locY + height - axisMargin] as Array<Numeric>);
-									screenPts.add([xPrev, locY + topMargin + innerHeight] as Array<Numeric>);
-									dc.fillPolygon(screenPts);
-								}
-							}else if(serie.style == DRAW_STYLE_LINE){
-								var pt = pts.firstDataPoint();
-								while(pt != null){
-									var x = xOffset + xFactor * pt.x;
-									if(pt.y != null){
-										var y = yOffset + yFactor * pt.y as Numeric;
-										if(xPrev != null && yPrev != null){											
-											dc.drawLine(xPrev as Numeric, yPrev as Numeric, x, y);
-										}
-										yPrev = y;
-									}else{
-										yPrev = null;
-									}
+									screenPts.add([x, y] as Array<Numeric>);
 									xPrev = x;
-									pt = pts.nextDataPoint();
+									yPrev = y;
+								}else{
+									// from previous x value go down
+									if(screenPts.size() > 0){
+										// draw serie till last point
+										screenPts.add([xPrev as Numeric, yOffset] as Array<Numeric>);
+										dc.fillPolygon(screenPts);
+									}
+									// and start a new one
+									screenPts = [] as Array< Array<Numeric> >;
+									xPrev = null;
+									yPrev = null;
 								}
+								pt = serie.next();
 							}
+							if(xPrev != null){
+								//screenPts.add([xPrev as Numeric, locY + height - axisMargin] as Array<Numeric>);
+								screenPts.add([xPrev, yOffset] as Array<Numeric>);
+								dc.fillPolygon(screenPts);
+							}
+						}else if(serie.style == DRAW_STYLE_LINE){
+							var pt = serie.reset();
+							while(pt != null){
+								var x = xOffset + xFactor * (pt.x - xMin);
+								if(pt.y != null){
+									var y = yOffset + yFactor * (pt.y as Numeric - yMin);
+									if(xPrev != null && yPrev != null){											
+										dc.drawLine(xPrev as Numeric, yPrev as Numeric, x, y);
+									}
+									yPrev = y;
+								}else{
+									yPrev = null;
+								}
+								xPrev = x;
+								pt = serie.next();
+							}
+						}
 
-							// Min value
-							var pt = serie.data.ptMin;
-							if((serie.markers != null) && (pt != null) && (MARKER_MIN == MARKER_MIN)){
-								if(pt.y != null){
-									var pt_y = pt.y as Numeric;
-									dc.setColor(minMarkerColor, Graphics.COLOR_TRANSPARENT);
-									drawMarker(
-										dc, 
-										xOffset + xFactor * pt.x, 
-										yOffset + yFactor * pt_y,
-										leftMargin, 
-										pt_y.format("%d")
-									);
-								}
+						// Min value
+						var pt = serie.ptMin;
+						var markers = serie.markers;
+						if((markers != null) && (pt != null) && (markers & MARKER_MIN > 0)){
+							if(pt.y != null){
+								var pt_y = pt.y as Numeric;
+								dc.setColor(minMarkerColor, Graphics.COLOR_TRANSPARENT);
+								drawMarker(
+									dc, 
+									xOffset + xFactor * (pt.x - xMin), 
+									yOffset + yFactor * (pt_y - yMin),
+									leftMargin, 
+									pt_y.format("%d")
+								);
 							}
-							// Max value
-							pt = serie.data.ptMax;
-							if((serie.markers != null) && (pt != null) && (MARKER_MAX == MARKER_MAX)){
-								if(pt.y != null){
-									var pt_y = pt.y as Numeric;
-									dc.setColor(maxMarkerColor, Graphics.COLOR_TRANSPARENT);
-									drawMarker(
-										dc, 
-										xOffset + xFactor * pt.x, 
-										yOffset + yFactor * pt_y, 
-										leftMargin, 
-										pt_y.format("%d")
-									);
-								}
+						}
+						// Max value
+						pt = serie.ptMax;
+						if((serie.markers != null) && (pt != null) && (markers & MARKER_MAX > 0)){
+							if(pt.y != null){
+								var pt_y = pt.y as Numeric;
+								dc.setColor(maxMarkerColor, Graphics.COLOR_TRANSPARENT);
+								drawMarker(
+									dc, 
+									xOffset + xFactor * (pt.x - xMin), 
+									yOffset + yFactor * (pt_y - yMin), 
+									leftMargin, 
+									pt_y.format("%d")
+								);
 							}
 						}
 					}
@@ -259,9 +284,11 @@ module MyGraph{
 
 		public function addSerie(serie as Serie) as Void{
 			series.add(serie);
+			updateMinMax();
 		}
 		public function removeSerie(serie as Serie) as Void{
 			series.remove(serie);
+			updateMinMax();
 		}
 	}
 }
