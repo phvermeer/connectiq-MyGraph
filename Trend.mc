@@ -13,24 +13,21 @@ module MyGraph{
 		public var maxMarkerColor as Graphics.ColorType = Graphics.COLOR_RED;
 		public var minMarkerColor as Graphics.ColorType = Graphics.COLOR_GREEN;
 
-		// values to calculate screen positions from x,y
-		// (these values are updates when frame is drawn)
+		hidden var axisPenWidth as Number = 3;
+		hidden var markerFont as FontType = Graphics.FONT_XTINY;
+		hidden var markerSize as Number = 6;
+		var xAxis as Axis;
+		var yAxis as Axis;
+
+		// margins for series area
 		hidden var topMargin as Numeric = 0;
 		hidden var leftMargin as Numeric = 0;
-		hidden var innerWidth as Numeric = 0;
-		hidden var innerHeight as Numeric = 0;
-		// (these values are determined when series are drawn)
-		hidden var xMin as Numeric?;
-		hidden var xMax as Numeric?;
-		hidden var yMin as Numeric?;
-		hidden var yMax as Numeric?;
-		hidden var xOffset as Numeric = 0;
-		hidden var yOffset as Numeric = 0;
-		hidden var xFactor as Numeric = 0;
-		hidden var yFactor as Numeric = 0;
-		
+		hidden var bottomMargin as Numeric = 0;
+		hidden var rightMargin as Numeric = 0;
 
 		function initialize(options as {
+			:xAxis as Axis, // required
+			:yAxis as Axis, // required
 			:locX as Number, 
 			:locY as Number,
 			:width as Number, 
@@ -39,62 +36,76 @@ module MyGraph{
 			:darkMode as Boolean,
 			:xRangeMin as Float,
 		}){
+			var requiredOptions = [:xAxis, :yAxis] as Array<Symbol>;
+			for(var i=0; i<requiredOptions.size(); i++){
+				var key = requiredOptions[i];
+				if(!options.hasKey(key)){
+					throw new Lang.InvalidOptionsException(Lang.format("Missing option: $1$", [key.toString()]));
+				}
+			}
+			xAxis = options.get(:xAxis) as Axis;
+			yAxis = options.get(:yAxis) as Axis;
+
 			if(!options.hasKey(:identifier)){ options.put(:identifier, "Graph"); }
 			Drawable.initialize(options);
-
 			if(options.hasKey(:series)){
-				series = options.get(:series) as Array<Serie>;
-				updateMinMax();
+				setSeries(options.get(:series) as Array<Serie>);
 			}
 			if(options.hasKey(:darkMode)){ setDarkMode(options.get(:darkMode) as Boolean); }
 			if(options.hasKey(:xRangeMin)){ xRangeMin = options.get(:xRangeMin) as Numeric; }
+
+			updateSerieMargins();
 		}
 
-		function draw(dc as Dc){
+		function draw(dc as Dc) as Void{
 			// collect data
 			if(series == null){ return; }
 			drawFrame(dc);
-			drawSeries(dc);
+
+			for(var i=0; i<series.size(); i++){
+				series[i].draw(dc);
+			}
 		}
 
 		protected function drawFrame(dc as Dc) as Void{
-			var font = Graphics.FONT_XTINY;
-			var labelHeight = dc.getFontHeight(font);
-			var bottomMargin = 0; // space for the min/max distance 
-			var axisWidth = 2;
-			var axisMargin = 0.5f + Math.ceil(0.5f * axisWidth); // space for the axis width
+			var axisOffset = 0.5f * axisPenWidth; // space for the axis width
 
-			self.topMargin = labelHeight + 6; // space for the markers
-			self.leftMargin = axisMargin;
-			self.innerHeight = height - (topMargin + bottomMargin + axisMargin);
-			self.innerWidth = width - (2 * axisMargin);
-
+			var x1 = locX + leftMargin - axisOffset;
+			var x2 = locX + width - rightMargin + axisOffset;
+			var y1 = locY + topMargin - axisOffset;
+			var y2 = locY + height - bottomMargin + axisOffset;
 
 			// draw the xy-axis frame
-			dc.setPenWidth(axisWidth);
+			dc.setPenWidth(axisPenWidth);
 			dc.setColor(frameColor, Graphics.COLOR_TRANSPARENT);
-			dc.drawLine(locX, locY+topMargin, locX, locY+height-bottomMargin);
-			dc.drawLine(locX, locY+height-bottomMargin, locX+width, locY+height-bottomMargin);
-			dc.drawLine(locX+width, locY+topMargin, locX+width, locY+height-bottomMargin);
+			dc.drawLine(x1, y1, x1, y2);
+			dc.drawLine(x1, y2, x2, y2);
+			dc.drawLine(x2, y2, x2, y1);
+		}
+
+		function setSeries(series as Array<Serie>) as Void{
+			for(var i=0; i<series.size(); i++){
+				var serie = series[i];
+				serie.xAxis = xAxis;
+				serie.yAxis = yAxis;
+			}
+			self.series = series;
+			updateMinMax();
 		}
 
 		protected function updateMinMax() as Void{
 			// update generic min/max values
-			xMin = null;
-			xMax = null;
-			yMin = null;
-			yMax = null;
+			var xMin = null;
+			var xMax = null;
+			var yMin = null;
+			var yMax = null;
 			for(var i=0; i<series.size(); i++){
 				var serie = series[i];
-				var ptFirst = serie.ptFirst;
-				var ptLast = serie.ptLast;
-				var ptMin = serie.ptMin;
-				var ptMax = serie.ptMax;
+				var xMin_ = serie.getXmin();
+				var xMax_ = serie.getXmax();
+				var yMin_ = serie.getYmin();
+				var yMax_ = serie.getYmax();
 
-				var xMin_ = (ptFirst != null) ? ptFirst.x : null;
-				var xMax_ = (ptLast != null) ? ptLast.x : null;
-				var yMin_ = (ptMin != null) ? ptMin.y : null;
-				var yMax_ = (ptMax != null) ? ptMax.y : null;
 				if(xMin_ != null && (xMin == null || xMin_ < xMin as Numeric)){
 					xMin = xMin_ as Numeric;
 				}
@@ -109,15 +120,12 @@ module MyGraph{
 				}
 			}
 
-			// calculate factor x,y => pixels
-			if(xMin != null && xMax != null){
-				self.xFactor = innerWidth / (self.xMax-self.xMin);
-			}
-			if(yMin != null && yMax != null){
-				self.yFactor = innerHeight / (self.yMax-self.yMin);
-			}
+			if(xMin != null){ xAxis.min = xMin; }
+			if(xMax != null){ xAxis.max = xMax; }
+			if(yMin != null){ yAxis.min = yMin; }
+			if(yMax != null){ yAxis.max = yMax; }
 		}
-
+/*
 		protected function drawSeries(dc as Dc) as Void{
 			if(series.size() > 0){
 				updateMinMax();
@@ -141,6 +149,7 @@ module MyGraph{
 					
 					for(var s=0; s<series.size(); s++){
 						var serie = series[s];
+						serie.draw(xAxis, yAxis);
 						if(xMax <= xMin){ return; }
 
 						var yRangeMin = serie.yRangeMin; // minimal vertical range
@@ -247,14 +256,16 @@ module MyGraph{
 				}
 			}
 		}
-
+*/
+/*
 		public function drawCurrentXY(dc as Dc, x as Numeric, y as Numeric) as Void{
 			dc.setColor(xyMarkerColor, Graphics.COLOR_TRANSPARENT);
 			var xScreen = locX + xOffset + xFactor * x;
 			var yScreen = locY + yOffset + yFactor * y;
 			drawMarker(dc, xScreen, yScreen, leftMargin, y.format("%d"));
 		}
-	
+*/
+/*	
 		protected function drawMarker(dc as Dc, x as Numeric, y as Numeric, margin as Numeric, text as String) as Void{
 			var font = Graphics.FONT_XTINY;
 			var w2 = dc.getTextWidthInPixels(text, font)/2;
@@ -273,7 +284,7 @@ module MyGraph{
 			dc.setColor(textColor, Graphics.COLOR_TRANSPARENT);
 			dc.drawText(xText, y-6-h, font, text, Graphics.TEXT_JUSTIFY_CENTER);
 		}
-
+*/
 		public function setDarkMode(darkMode as Boolean) as Void{
 			self.textColor = darkMode ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
 			self.frameColor = darkMode ? Graphics.COLOR_LT_GRAY : Graphics.COLOR_DK_GRAY;
@@ -289,6 +300,36 @@ module MyGraph{
 		public function removeSerie(serie as Serie) as Void{
 			series.remove(serie);
 			updateMinMax();
+		}
+
+		function setSize(w as Numeric, h as Numeric) as Void{
+			Drawable.setSize(w, h);
+
+			var w_ = width - (leftMargin + rightMargin);
+			var h_ = height - (topMargin + bottomMargin);
+
+			// update area for the series
+			for(var i=0; i<series.size(); i++){
+				series[i].setSize(w_, h_);
+			}
+		}
+
+		function setLocation(x as Numeric, y as Numeric) as Void{
+			Drawable.setLocation(x, y);
+
+			var x_ = locX + leftMargin;
+			var y_ = locY + topMargin;
+			for(var i=0; i<series.size(); i++){
+				series[i].setLocation(x_, y_);
+			}
+		}
+
+		hidden function updateSerieMargins() as Void{
+			var labelHeight = Graphics.getFontHeight(markerFont);
+			topMargin = markerSize + labelHeight;
+			bottomMargin = axisPenWidth; // space for the min/max distance 
+			leftMargin = axisPenWidth;
+			rightMargin = axisPenWidth;
 		}
 	}
 }
