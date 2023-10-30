@@ -141,11 +141,14 @@ module MyGraph{
 									}
 
 									if(outsideLimitsPrev){
-										// start polygon
+										// start new polygon
 										xys = [
 											[xPrev, locY+height],
 											[xPrev, yPrev] as Array<Numeric>
 										] as Array< Array<Numeric> >;
+									}else if(skipPrev){
+										// start new polygon
+										xys.add([x, locY+height] as Array<Numeric>);										
 									}
 									// continu
 									xys.add([x, y] as Array<Numeric>);
