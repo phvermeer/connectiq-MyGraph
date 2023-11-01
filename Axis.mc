@@ -9,5 +9,11 @@ module MyGraph{
             self.min = min;
             self.max = max;
         }
+
+        function getFactor(size as Numeric) as Float{
+            return (max!=min)
+                ? (1f*size/(max-min)).toFloat()
+                : 0f;
+        }
     }
 }

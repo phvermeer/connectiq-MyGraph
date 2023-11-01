@@ -23,10 +23,10 @@ module MyGraph{
 		var color as ColorType;
 		
 		hidden var pts as IIterator;
-		hidden var ptMin as DataPoint?;
-		hidden var ptMax as DataPoint?;
-		hidden var ptFirst as DataPoint?;
-		hidden var ptLast as DataPoint?;
+		var ptMin as DataPoint?;
+		var ptMax as DataPoint?;
+		var ptFirst as DataPoint?;
+		var ptLast as DataPoint?;
 
 		hidden var index as Number = -1;
 
@@ -36,8 +36,6 @@ module MyGraph{
 			:yAxis as Axis,
 			:color as ColorType, // optional
 			:style as DrawStyle, //optional
-			:markers as MarkerType,
-			:yRangeMin as Numeric,
 		}){
 			Drawable.initialize(options);
 			var requiredOptions = [:pts] as Array<Symbol>;
@@ -50,13 +48,9 @@ module MyGraph{
 			pts = options.get(:pts)	as IIterator;
 			color = options.hasKey(:color) ? options.get(:color) as ColorType : Graphics.COLOR_PINK;
 			if(options.hasKey(:style)){ style = options.get(:style) as DrawStyle; }
-			if(options.hasKey(:markers)){ markers = options.get(:markers) as Number; }
 		}
 
 		function draw(dc as Dc) as Void{
-			dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
-			dc.fillRectangle(locX+1, locY+1, width-2, height-2);
-
 			if(xAxis != null && yAxis != null){
 				var xAxis = self.xAxis as Axis;
 				var yAxis = self.yAxis as Axis;
@@ -64,8 +58,8 @@ module MyGraph{
 				dc.setColor(color, Graphics.COLOR_TRANSPARENT);
 
 				// get conversion parameters
-				var xFactor = 1f*width / (xAxis.max - xAxis.min);
-				var yFactor = 1f*height / (yAxis.max - yAxis.min);
+				var xFactor = xAxis.getFactor(width);
+				var yFactor = xAxis.getFactor(height);
 
 				var xPrev = 0;
 				var yPrev = 0;
@@ -182,33 +176,6 @@ module MyGraph{
 						}
 					}
 				}
-/*
-					for(var i=0; i<pts.size(); i++){
-						var pt = pts[i];
-						if(pt.x >= xAxis.min && pt.x <= xAxis.max && pt.y >= yAxis.min && pt.y <= yAxis.max){
-							var x = locX + (pt.x - xMin)*xFactor;
-							var y = locY + (pt.y - yMin)*yFactor;
-
-							if(xPrev == null){
-								xys.add(x, yMin); // add point at x-axis
-							}
-							// add point
-							xys.add(x, y);
-
-							xPrev = x;
-							yPrev = y;
-						}else{
-							if(xPrev != null){
-								xys.add(x, yMin); // add point at x-axis
-							}
-							xPrev = null;
-						}
-					}
-				if(xPrev != null){
-					// add point at x-axis
-					xys.add(x, yMin); // add point at x-axis
-				}
-*/
 			}
 		}
 		hidden function interpolateY(xOld as Numeric, yOld as Numeric, xNew as Numeric, xRef as Numeric, yRef as Numeric) as Numeric{

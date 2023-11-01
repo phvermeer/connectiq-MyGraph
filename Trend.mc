@@ -4,8 +4,10 @@ import Toybox.Graphics;
 
 module MyGraph{
 	class Trend extends WatchUi.Drawable{
-		hidden var series as Array<Serie> = [] as Array<Serie>;
-		hidden var xRangeMin as Numeric = 20.0f;
+		var xAxis as Axis;
+		var yAxis as Axis;
+		var series as Array<Serie> = [] as Array<Serie>;
+		var markers as Array<Marker> = [] as Array<Marker>;
 
 		public var frameColor as Graphics.ColorType = Graphics.COLOR_BLACK;
 		public var textColor as Graphics.ColorType = Graphics.COLOR_BLACK;
@@ -16,8 +18,6 @@ module MyGraph{
 		hidden var axisPenWidth as Number = 3;
 		hidden var markerFont as FontType = Graphics.FONT_XTINY;
 		hidden var markerSize as Number = 6;
-		var xAxis as Axis;
-		var yAxis as Axis;
 
 		// margins for series area
 		hidden var topMargin as Numeric = 0;
@@ -48,23 +48,23 @@ module MyGraph{
 
 			if(!options.hasKey(:identifier)){ options.put(:identifier, "Graph"); }
 			Drawable.initialize(options);
-			if(options.hasKey(:series)){
-				setSeries(options.get(:series) as Array<Serie>);
-			}
+			if(options.hasKey(:series)){ setSeries(options.get(:series) as Array<Serie>); }
 			if(options.hasKey(:darkMode)){ setDarkMode(options.get(:darkMode) as Boolean); }
-			if(options.hasKey(:xRangeMin)){ xRangeMin = options.get(:xRangeMin) as Numeric; }
 
 			updateSerieMargins();
 		}
 
 		function draw(dc as Dc) as Void{
-			// collect data
-			if(series == null){ return; }
 			drawFrame(dc);
 
 			for(var i=0; i<series.size(); i++){
 				series[i].draw(dc);
 			}
+
+			for(var i=0; i<markers.size(); i++){
+				markers[i].draw(dc);
+			}
+
 		}
 
 		protected function drawFrame(dc as Dc) as Void{
@@ -90,9 +90,9 @@ module MyGraph{
 				serie.yAxis = yAxis;
 			}
 			self.series = series;
-			updateMinMax();
+//			updateMinMax();
 		}
-
+/*
 		protected function updateMinMax() as Void{
 			// update generic min/max values
 			var xMin = null;
@@ -125,6 +125,7 @@ module MyGraph{
 			if(yMin != null){ yAxis.min = yMin; }
 			if(yMax != null){ yAxis.max = yMax; }
 		}
+*/
 /*
 		protected function drawSeries(dc as Dc) as Void{
 			if(series.size() > 0){
@@ -257,49 +258,12 @@ module MyGraph{
 			}
 		}
 */
-/*
-		public function drawCurrentXY(dc as Dc, x as Numeric, y as Numeric) as Void{
-			dc.setColor(xyMarkerColor, Graphics.COLOR_TRANSPARENT);
-			var xScreen = locX + xOffset + xFactor * x;
-			var yScreen = locY + yOffset + yFactor * y;
-			drawMarker(dc, xScreen, yScreen, leftMargin, y.format("%d"));
-		}
-*/
-/*	
-		protected function drawMarker(dc as Dc, x as Numeric, y as Numeric, margin as Numeric, text as String) as Void{
-			var font = Graphics.FONT_XTINY;
-			var w2 = dc.getTextWidthInPixels(text, font)/2;
-			var h = dc.getFontHeight(font);
-			var xText = x;
-			if((x-w2) < (locX + margin)){
-				xText = locX + margin + w2;
-			}else if((x+w2) > (locX + width - margin)){
-				xText = locX + width - margin - w2;
-			}
-			dc.fillPolygon([
-				[x, y] as Array<Numeric>,
-				[x-5, y-6] as Array<Numeric>,
-				[x+5, y-6] as Array<Numeric>
-			] as Array< Array<Numeric> >);
-			dc.setColor(textColor, Graphics.COLOR_TRANSPARENT);
-			dc.drawText(xText, y-6-h, font, text, Graphics.TEXT_JUSTIFY_CENTER);
-		}
-*/
 		public function setDarkMode(darkMode as Boolean) as Void{
 			self.textColor = darkMode ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
 			self.frameColor = darkMode ? Graphics.COLOR_LT_GRAY : Graphics.COLOR_DK_GRAY;
 			self.xyMarkerColor = darkMode ? Graphics.COLOR_YELLOW : Graphics.COLOR_DK_BLUE;
 			self.minMarkerColor = darkMode ? Graphics.COLOR_RED : Graphics.COLOR_DK_RED;
 			self.maxMarkerColor = darkMode ? Graphics.COLOR_GREEN : Graphics.COLOR_DK_GREEN;
-		}
-
-		public function addSerie(serie as Serie) as Void{
-			series.add(serie);
-			updateMinMax();
-		}
-		public function removeSerie(serie as Serie) as Void{
-			series.remove(serie);
-			updateMinMax();
 		}
 
 		function setSize(w as Numeric, h as Numeric) as Void{
@@ -325,8 +289,7 @@ module MyGraph{
 		}
 
 		hidden function updateSerieMargins() as Void{
-			var labelHeight = Graphics.getFontHeight(markerFont);
-			topMargin = markerSize + labelHeight;
+			topMargin = 0;
 			bottomMargin = axisPenWidth; // space for the min/max distance 
 			leftMargin = axisPenWidth;
 			rightMargin = axisPenWidth;
