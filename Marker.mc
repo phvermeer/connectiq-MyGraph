@@ -28,7 +28,7 @@ module MyGraph{
             color = options.hasKey(:color) ? options.get(:color) as ColorType : Graphics.COLOR_GREEN;
             textColor = options.hasKey(:textColor) ? options.get(:textColor) as ColorType : Graphics.COLOR_DK_GRAY;
             font = options.hasKey(:font) ? options.get(:font) as FontType : Graphics.FONT_XTINY;
-            size = options.hasKey(:size) ? options.get(:size) as Numeric : 6;
+            size = options.hasKey(:size) ? options.get(:size) as Numeric : Graphics.getFontHeight(font)/2;
             if(options.hasKey(:text)){ text = options.get(:text) as String; }
         }
 
@@ -40,40 +40,38 @@ module MyGraph{
                     var pt = self.pt as DataPoint;
                     var pt_y = pt.y as Numeric;
 
-                    // Prepare drawing
-                    var xFactor = xAxis.getFactor(serie.width);
-                    var yFactor = yAxis.getFactor(serie.height);
-                    var x = serie.locX + xFactor * (pt.x - xAxis.min);
-                    var y = serie.locY + yFactor * (yAxis.max - pt_y);
-
                     //    X-------X
                     //     \     /   height = size
                     //      \   /    width = size * sqrt(2)
                     //        X
                     var w2 = 0.7 * size;
+
+                    // Prepare drawing
+                    var xFactor = xAxis.getFactor(serie.width);
+                    var yFactor = yAxis.getFactor(serie.height);
+
+                    var x_ = xFactor * (pt.x - xAxis.min);
+                    var xOffset = (x_ - w2 < 0) ? w2 - x_ : (x_ + w2 > serie.width) ? x_ - (serie.width + w2) : 0;
+
+                    var x = x_ + serie.locX;
+                    var y = serie.locY + yFactor * (yAxis.max - pt_y);
+
                     dc.setColor(color, Graphics.COLOR_TRANSPARENT);
                     dc.fillPolygon([
                         [x, y] as Array<Numeric>,
-                        [x-w2, y-size] as Array<Numeric>,
-                        [x+w2, y-size] as Array<Numeric>
+                        [x - w2 + xOffset, y - size] as Array<Numeric>,
+                        [x + w2 + xOffset, y - size] as Array<Numeric>
                     ] as Array< Array<Numeric> >);
 
                     // Draw the text
                     if(text != null){
                         var w_h = dc.getTextDimensions(text, font);
-                        var marginLeft = Graphics.getFontDescent(font)/2;
                         w2 = w_h[0]/2;
+                        xOffset = (x_ - w2 < 0) ? w2 - x_ : (x_ + w2 > serie.width) ? x_ - (serie.width + w2) : 0;
                         var h = w_h[1];
 
-                        var xText = x;
-                        if((x-w2) < (serie.locX + marginLeft)){
-                            xText = serie.locX + marginLeft + w2;
-                        }else if((x+w2) > (serie.locX + serie.width - marginLeft)){
-                            xText = serie.locX + serie.width - marginLeft - w2;
-                        }
-
                         dc.setColor(textColor, Graphics.COLOR_TRANSPARENT);
-                        dc.drawText(xText, y-size-h, font, text as String, Graphics.TEXT_JUSTIFY_CENTER);
+                        dc.drawText(x + xOffset, y - size - h, font, text as String, Graphics.TEXT_JUSTIFY_CENTER);
                     }
                 }
             }
