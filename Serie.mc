@@ -59,7 +59,7 @@ module MyGraph{
 
 				// get conversion parameters
 				var xFactor = xAxis.getFactor(width);
-				var yFactor = xAxis.getFactor(height);
+				var yFactor = yAxis.getFactor(height);
 
 				var xPrev = 0;
 				var yPrev = 0;
