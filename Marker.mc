@@ -51,7 +51,11 @@ module MyGraph{
                     var yFactor = yAxis.getFactor(serie.height);
 
                     var x_ = xFactor * (pt.x - xAxis.min);
-                    var xOffset = (x_ - w2 < 0) ? w2 - x_ : (x_ + w2 > serie.width) ? x_ - (serie.width + w2) : 0;
+                    var xOffset = (x_ - w2 < 0)
+                        ? w2 - x_
+                        : (x_ + w2 > serie.width)
+                            ? (serie.width - x_) - w2
+                            : 0;
 
                     var x = x_ + serie.locX;
                     var y = serie.locY + yFactor * (yAxis.max - pt_y);
@@ -59,8 +63,8 @@ module MyGraph{
                     dc.setColor(color, Graphics.COLOR_TRANSPARENT);
                     dc.fillPolygon([
                         [x, y] as Array<Numeric>,
-                        [x - w2 + xOffset, y - size] as Array<Numeric>,
-                        [x + w2 + xOffset, y - size] as Array<Numeric>
+                        [x - w2, y - size] as Array<Numeric>,
+                        [x + w2, y - size] as Array<Numeric>
                     ] as Array< Array<Numeric> >);
 
                     // Draw the text
