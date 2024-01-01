@@ -11,9 +11,6 @@ module MyGraph{
 
 		public var frameColor as Graphics.ColorType = Graphics.COLOR_BLACK;
 		public var textColor as Graphics.ColorType = Graphics.COLOR_BLACK;
-		public var xyMarkerColor as Graphics.ColorType = Graphics.COLOR_BLACK;
-		public var maxMarkerColor as Graphics.ColorType = Graphics.COLOR_RED;
-		public var minMarkerColor as Graphics.ColorType = Graphics.COLOR_GREEN;
 
 		hidden var axisPenWidth as Number = 3;
 		hidden var markerFont as FontType = Graphics.FONT_XTINY;
@@ -87,10 +84,7 @@ module MyGraph{
 
 		public function setDarkMode(darkMode as Boolean) as Void{
 			self.textColor = darkMode ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
-			self.frameColor = darkMode ? Graphics.COLOR_LT_GRAY : Graphics.COLOR_DK_GRAY;
-			self.xyMarkerColor = darkMode ? Graphics.COLOR_YELLOW : Graphics.COLOR_DK_BLUE;
-			self.minMarkerColor = darkMode ? Graphics.COLOR_RED : Graphics.COLOR_DK_RED;
-			self.maxMarkerColor = darkMode ? Graphics.COLOR_GREEN : Graphics.COLOR_DK_GREEN;
+			self.frameColor = darkMode ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
 		}
 
 		function setSize(w as Numeric, h as Numeric) as Void{
