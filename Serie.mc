@@ -21,6 +21,8 @@ module MyGraph{
 		var xAxis as Axis?;
 		var yAxis as Axis?;
 		var color as ColorType;
+		var color2 as ColorType;
+		var xCurrent as Numeric|Null; // update realtime x
 		
 		hidden var pts as IIterator;
 		var ptMin as DataPoint?;
@@ -35,6 +37,7 @@ module MyGraph{
 			:xAxis as Axis,
 			:yAxis as Axis,
 			:color as ColorType, // optional
+			:color2 as ColorType, // optional
 			:style as DrawStyle, //optional
 		}){
 			Drawable.initialize(options);
@@ -47,6 +50,7 @@ module MyGraph{
 			}
 			pts = options.get(:pts)	as IIterator;
 			color = options.hasKey(:color) ? options.get(:color) as ColorType : Graphics.COLOR_PINK;
+			color2 = options.hasKey(:color2) ? options.get(:color2) as ColorType : Graphics.COLOR_BLUE;
 			if(options.hasKey(:style)){ style = options.get(:style) as DrawStyle; }
 		}
 
@@ -67,6 +71,7 @@ module MyGraph{
 				var xMax = xMin + width;
 				var yMin = locY;
 				var yMax = yMin + height;
+				var xColor2 = (xCurrent != null) ? locX + (xCurrent - xAxis.min) * xFactor : null;
 
 				var outsideLimitsPrev = false;
 				var skipPrev = true;
@@ -144,6 +149,20 @@ module MyGraph{
 										// start new polygon
 										xys.add([x, locY+height] as Array<Numeric>);										
 									}
+
+									// change color at xSplit
+									if(xColor2 != null && xPrev < xColor2 && x >= xColor2){
+										// add additional point for xCurrent
+										var yColor2 = MyMath.interpolateY(xPrev, yPrev, x, y, xColor2);
+										xys.add([xColor2, yColor2] as Array<Numeric>);
+										xys.add([xColor2, locY + height] as Array<Numeric>);
+										dc.fillPolygon(xys);
+
+										// from here start with color2
+										dc.setColor(color2, Graphics.COLOR_TRANSPARENT);
+										xys = [[xColor2, locY + height], [xColor2, yColor2]] as Array< Array<Numeric> >;
+									}
+
 									// continu
 									xys.add([x, y] as Array<Numeric>);
 
