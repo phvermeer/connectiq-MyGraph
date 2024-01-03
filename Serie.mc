@@ -25,7 +25,7 @@ module MyGraph{
 		var color2 as ColorType;
 		var xCurrent as Numeric|Null; // update realtime x
 		
-		hidden var pts as IIterator;
+		hidden var data as IIterator;
 		var ptMin as DataPoint?;
 		var ptMax as DataPoint?;
 		var ptFirst as DataPoint?;
@@ -34,7 +34,7 @@ module MyGraph{
 		hidden var index as Number = -1;
 
 		function initialize(options as {
-			:pts as IIterator, // required
+			:data as IIterator, // required
 			:xAxis as Axis,
 			:yAxis as Axis,
 			:color as ColorType, // optional
@@ -42,14 +42,14 @@ module MyGraph{
 			:style as DrawStyle, //optional
 		}){
 			Drawable.initialize(options);
-			var requiredOptions = [:pts] as Array<Symbol>;
+			var requiredOptions = [:data] as Array<Symbol>;
 			for(var i=0; i<requiredOptions.size(); i++){
 				var key = requiredOptions[i];
 				if(!options.hasKey(key)){
 					throw new Lang.InvalidOptionsException(Lang.format("Missing option: $1$", [key.toString()]));
 				}
 			}
-			pts = options.get(:pts)	as IIterator;
+			data = options.get(:data) as IIterator;
 			color = options.hasKey(:color) ? options.get(:color) as ColorType : Graphics.COLOR_PINK;
 			color2 = options.hasKey(:color2) ? options.get(:color2) as ColorType : Graphics.COLOR_BLUE;
 			if(options.hasKey(:style)){ style = options.get(:style) as DrawStyle; }
@@ -79,7 +79,7 @@ module MyGraph{
 
 				if(style == DRAW_STYLE_LINE){
 					dc.setPenWidth(penWidth);
-					var pt = pts.first() as DataPoint|Null;
+					var pt = data.first() as DataPoint|Null;
 					while(pt != null){
 						var pt_y = pt.y;
 						if(pt_y != null){
@@ -113,11 +113,11 @@ module MyGraph{
 						}else{
 							skipPrev = true;
 						}
-						pt = pts.next() as DataPoint|Null;
+						pt = data.next() as DataPoint|Null;
 					}
 				}else if(style == DRAW_STYLE_FILLED){
 					var xys = [] as Array< Array<Numeric> >;
-					var pt = pts.first() as DataPoint|Null;
+					var pt = data.first() as DataPoint|Null;
 					while(pt != null){
 						var pt_y = pt.y;
 						if(pt_y != null){
@@ -185,7 +185,7 @@ module MyGraph{
 							}
 							skipPrev = true;
 						}
-						pt = pts.next();
+						pt = data.next();
 					}
 
 					// finish and draw last polygon
@@ -196,7 +196,7 @@ module MyGraph{
 				}
 			}
 		}
-		
+
 		function getXmin() as Numeric|Null{
 			return ptFirst != null ? ptFirst.x : null;
 		}
@@ -222,7 +222,7 @@ module MyGraph{
 			ptFirst = null;
 			ptLast = null;
 
-			var pt = pts.first() as DataPoint|Null;
+			var pt = data.first() as DataPoint|Null;
 			while(pt != null){
 				var x = pt.x;
 				if(x != null){
@@ -248,8 +248,13 @@ module MyGraph{
 					}
 				}
 
-				pt = pts.next() as DataPoint;
+				pt = data.next() as DataPoint;
 			}
+		}
+
+		function setData(data as IIterator) as Void{
+			self.data = data;
+			updateStatistics();
 		}
 	}
 }
