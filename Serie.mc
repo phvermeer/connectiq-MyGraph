@@ -1,6 +1,7 @@
 import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
+import MyMath;
 
 module MyGraph{
 
@@ -91,11 +92,11 @@ module MyGraph{
 							// check if area within limits is crossed
 							if(!skipPrev && !(outsideLimits && outsideLimitsPrev)){
 								if(outsideLimits){
-									var xy = interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
+									var xy = MyMath.interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
 									x = xy[0];
 									y = xy[1];
 								}else if(outsideLimitsPrev){
-									var xy = interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
+									var xy = MyMath.interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
 									xPrev = xy[0];
 									yPrev = xy[1];
 								}
@@ -128,11 +129,11 @@ module MyGraph{
 
 							if(!(outsideLimits && outsideLimitsPrev)){
 								if(outsideLimits){
-									var xy = interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
+									var xy = MyMath.interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
 									x = xy[0];
 									y = xy[1];
 								}else if(outsideLimitsPrev){
-									var xy = interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
+									var xy = MyMath.interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
 									xPrev = xy[0];
 									yPrev = xy[1];
 								}
@@ -195,32 +196,7 @@ module MyGraph{
 				}
 			}
 		}
-		hidden function interpolateY(x1 as Numeric, y1 as Numeric, x2 as Numeric, y2 as Numeric, x as Numeric) as Numeric{
-			var rc = (y1-y2)/(x1-x2);
-			var y = y1 + (x-x1) * rc;
-			return y;
-		}
-		hidden function interpolateX(x1 as Numeric, y1 as Numeric, x2 as Numeric, y2 as Numeric, y as Numeric) as Numeric{
-			return interpolateY(y1, x1, y2, x2, y);
-		}
-		hidden function interpolateXY(x1 as Numeric, y1 as Numeric, x2 as Numeric, y2 as Numeric, xMin as Numeric, xMax as Numeric, yMin as Numeric, yMax as Numeric) as Array<Numeric>{
-			if(x1 < xMin){
-				y1 = interpolateY(x1, y1, x2, y2, xMin);
-				x1 = xMin;
-			}else if(x1 > xMax){
-				y1 = interpolateY(x1, y1, x2, y2, xMax);
-				x1 = xMax;
-			}
-			if(y1 < yMin){
-				x1 = interpolateX(x1, y1, x2, y2, yMin);
-				y1 = yMin;
-			}else if(y1 > yMax){
-				x1 = interpolateX(x1, y1, x2, y2, yMax);
-				y1 = yMax;
-			}
-			return [x1, y1] as Array<Numeric>;
-		}
-
+		
 		function getXmin() as Numeric|Null{
 			return ptFirst != null ? ptFirst.x : null;
 		}
