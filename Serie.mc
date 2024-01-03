@@ -78,150 +78,144 @@ module MyGraph{
 
 				if(style == DRAW_STYLE_LINE){
 					dc.setPenWidth(penWidth);
-					if(pts.first()){
-						do{
-							var pt = pts.current() as DataPoint;
-							var pt_y = pt.y;
-							if(pt_y != null){
-								var x = locX + (pt.x - xAxis.min)*xFactor;
-								var y = locY + (yAxis.max - pt_y)*yFactor;
+					var pt = pts.first() as DataPoint|Null;
+					while(pt != null){
+						var pt_y = pt.y;
+						if(pt_y != null){
+							var x = locX + (pt.x - xAxis.min)*xFactor;
+							var y = locY + (yAxis.max - pt_y)*yFactor;
 
-								// check limits
-								var outsideLimits = (x < xMin || x > xMax || y < yMin || y > yMax);
+							// check limits
+							var outsideLimits = (x < xMin || x > xMax || y < yMin || y > yMax);
 
-								// check if area within limits is crossed
-								if(!skipPrev && !(outsideLimits && outsideLimitsPrev)){
-									if(outsideLimits){
-										var xy = interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
-										x = xy[0];
-										y = xy[1];
-									}else if(outsideLimitsPrev){
-										var xy = interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
-										xPrev = xy[0];
-										yPrev = xy[1];
-									}
-
-									// draw line
-									dc.drawLine(xPrev, yPrev, x, y);
+							// check if area within limits is crossed
+							if(!skipPrev && !(outsideLimits && outsideLimitsPrev)){
+								if(outsideLimits){
+									var xy = interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
+									x = xy[0];
+									y = xy[1];
+								}else if(outsideLimitsPrev){
+									var xy = interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
+									xPrev = xy[0];
+									yPrev = xy[1];
 								}
 
-								// prepare next
-								xPrev = x;
-								yPrev = y;
-								outsideLimitsPrev = outsideLimits;
-								skipPrev = false;
-							}else{
-								skipPrev = true;
+								// draw line
+								dc.drawLine(xPrev, yPrev, x, y);
 							}
-						}while(pts.next());
+
+							// prepare next
+							xPrev = x;
+							yPrev = y;
+							outsideLimitsPrev = outsideLimits;
+							skipPrev = false;
+						}else{
+							skipPrev = true;
+						}
+						pt = pts.next() as DataPoint|Null;
 					}
 				}else if(style == DRAW_STYLE_FILLED){
 					var xys = [] as Array< Array<Numeric> >;
-					if(pts.first()){
-						do{
-							var pt = pts.current() as DataPoint;
-							var pt_y = pt.y;
-							if(pt_y != null){
-								var x = locX + (pt.x - xAxis.min)*xFactor;
-								var y = locY + (yAxis.max - pt_y)*yFactor;
+					var pt = pts.first() as DataPoint|Null;
+					while(pt != null){
+						var pt_y = pt.y;
+						if(pt_y != null){
+							var x = locX + (pt.x - xAxis.min)*xFactor;
+							var y = locY + (yAxis.max - pt_y)*yFactor;
 
-								// check limits
-								var outsideLimits = (x < xMin || x > xMax || y < yMin || y > yMax);
+							// check limits
+							var outsideLimits = (x < xMin || x > xMax || y < yMin || y > yMax);
 
-								if(!(outsideLimits && outsideLimitsPrev)){
-									if(outsideLimits){
-										var xy = interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
-										x = xy[0];
-										y = xy[1];
-									}else if(outsideLimitsPrev){
-										var xy = interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
-										xPrev = xy[0];
-										yPrev = xy[1];
-									}
-
-									if(outsideLimitsPrev){
-										// start new polygon
-										xys = [
-											[xPrev, locY+height],
-											[xPrev, yPrev] as Array<Numeric>
-										] as Array< Array<Numeric> >;
-									}else if(skipPrev){
-										// start new polygon
-										xys.add([x, locY+height] as Array<Numeric>);										
-									}
-
-									// change color at xSplit
-									if(xColor2 != null && xPrev < xColor2 && x >= xColor2){
-										// add additional point for xCurrent
-										var yColor2 = MyMath.interpolateY(xPrev, yPrev, x, y, xColor2);
-										xys.add([xColor2, yColor2] as Array<Numeric>);
-										xys.add([xColor2, locY + height] as Array<Numeric>);
-										dc.fillPolygon(xys);
-
-										// from here start with color2
-										dc.setColor(color2, Graphics.COLOR_TRANSPARENT);
-										xys = [[xColor2, locY + height], [xColor2, yColor2]] as Array< Array<Numeric> >;
-									}
-
-									// continu
-									xys.add([x, y] as Array<Numeric>);
-
-									if(outsideLimits){
-										// close polygon
-										xys.add([x, locY+height] as Array<Numeric>);
-										dc.fillPolygon(xys);
-									}
+							if(!(outsideLimits && outsideLimitsPrev)){
+								if(outsideLimits){
+									var xy = interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
+									x = xy[0];
+									y = xy[1];
+								}else if(outsideLimitsPrev){
+									var xy = interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
+									xPrev = xy[0];
+									yPrev = xy[1];
 								}
 
-								// prepare next
-								skipPrev = false;
-								xPrev = x;
-								yPrev = y;
-								outsideLimitsPrev = outsideLimits;
-							}else{
-								if(!skipPrev && !outsideLimitsPrev){
-									// close previous surface
-									xys.add([xPrev, locY+height] as Array<Numeric>);
+								if(outsideLimitsPrev){
+									// start new polygon
+									xys = [
+										[xPrev, locY+height],
+										[xPrev, yPrev] as Array<Numeric>
+									] as Array< Array<Numeric> >;
+								}else if(skipPrev){
+									// start new polygon
+									xys.add([x, locY+height] as Array<Numeric>);										
+								}
+
+								// change color at xSplit
+								if(xColor2 != null && xPrev < xColor2 && x >= xColor2){
+									// add additional point for xCurrent
+									var yColor2 = MyMath.interpolateY(xPrev, yPrev, x, y, xColor2);
+									xys.add([xColor2, yColor2] as Array<Numeric>);
+									xys.add([xColor2, locY + height] as Array<Numeric>);
+									dc.fillPolygon(xys);
+
+									// from here start with color2
+									dc.setColor(color2, Graphics.COLOR_TRANSPARENT);
+									xys = [[xColor2, locY + height], [xColor2, yColor2]] as Array< Array<Numeric> >;
+								}
+
+								// continu
+								xys.add([x, y] as Array<Numeric>);
+
+								if(outsideLimits){
+									// close polygon
+									xys.add([x, locY+height] as Array<Numeric>);
 									dc.fillPolygon(xys);
 								}
-								skipPrev = true;
 							}
-						}while(pts.next());
 
-						// finish and draw last polygon
-						if(!skipPrev && !outsideLimitsPrev){
-							xys.add([xPrev, locY+height] as Array<Numeric>);
-							dc.fillPolygon(xys);
+							// prepare next
+							skipPrev = false;
+							xPrev = x;
+							yPrev = y;
+							outsideLimitsPrev = outsideLimits;
+						}else{
+							if(!skipPrev && !outsideLimitsPrev){
+								// close previous surface
+								xys.add([xPrev, locY+height] as Array<Numeric>);
+								dc.fillPolygon(xys);
+							}
+							skipPrev = true;
 						}
+						pt = pts.next();
+					}
+
+					// finish and draw last polygon
+					if(!skipPrev && !outsideLimitsPrev){
+						xys.add([xPrev, locY+height] as Array<Numeric>);
+						dc.fillPolygon(xys);
 					}
 				}
 			}
 		}
-		hidden function interpolateY(xOld as Numeric, yOld as Numeric, xNew as Numeric, xRef as Numeric, yRef as Numeric) as Numeric{
-			var rc = (yOld-yRef)/(xOld-xRef);
-			var yNew = yRef + (xNew-xRef) * rc;
-			return yNew;
+		hidden function interpolateY(x1 as Numeric, y1 as Numeric, x2 as Numeric, y2 as Numeric, x as Numeric) as Numeric{
+			var rc = (y1-y2)/(x1-x2);
+			var y = y1 + (x-x1) * rc;
+			return y;
 		}
-		hidden function interpolateX(xOld as Numeric, yOld as Numeric, yNew as Numeric, xRef as Numeric, yRef as Numeric) as Numeric{
-			return interpolateY(yOld, xOld, yNew, yRef, xRef);
+		hidden function interpolateX(x1 as Numeric, y1 as Numeric, x2 as Numeric, y2 as Numeric, y as Numeric) as Numeric{
+			return interpolateY(y1, x1, y2, x2, y);
 		}
-		hidden function interpolateXY(
-			x1 as Numeric, y1 as Numeric,
-			x2 as Numeric, y2 as Numeric,
-			xMin as Numeric, xMax as Numeric, yMin as Numeric, yMax as Numeric) as Array<Numeric>
-		{
+		hidden function interpolateXY(x1 as Numeric, y1 as Numeric, x2 as Numeric, y2 as Numeric, xMin as Numeric, xMax as Numeric, yMin as Numeric, yMax as Numeric) as Array<Numeric>{
 			if(x1 < xMin){
-				y1 = interpolateY(x1, y1, xMin, x2, y2);
+				y1 = interpolateY(x1, y1, x2, y2, xMin);
 				x1 = xMin;
 			}else if(x1 > xMax){
-				y1 = interpolateY(x1, y1, xMax, x2, y2);
+				y1 = interpolateY(x1, y1, x2, y2, xMax);
 				x1 = xMax;
 			}
 			if(y1 < yMin){
-				x1 = interpolateX(x1, y1, yMin, x2, y2);
+				x1 = interpolateX(x1, y1, x2, y2, yMin);
 				y1 = yMin;
 			}else if(y1 > yMax){
-				x1 = interpolateX(x1, y1, yMax, x2, y2);
+				x1 = interpolateX(x1, y1, x2, y2, yMax);
 				y1 = yMax;
 			}
 			return [x1, y1] as Array<Numeric>;
@@ -252,52 +246,34 @@ module MyGraph{
 			ptFirst = null;
 			ptLast = null;
 
-			if(pts.first()){
-				do{
-					var pt = pts.current() as DataPoint;
-					var x = pt.x;
-					if(x != null){
-						var xMin = (ptFirst != null) ? ptFirst.x : null;
-						var xMax = (ptLast != null) ? ptLast.x : null;
-						if(ptMin == null || x < xMin as Numeric){
-							ptFirst = pt;
-						}
-						if(xMax == null || x > xMax as Numeric){
-							ptLast = pt;
-						}
+			var pt = pts.first() as DataPoint|Null;
+			while(pt != null){
+				var x = pt.x;
+				if(x != null){
+					var xMin = (ptFirst != null) ? ptFirst.x : null;
+					var xMax = (ptLast != null) ? ptLast.x : null;
+					if(ptMin == null || x < xMin as Numeric){
+						ptFirst = pt;
 					}
+					if(xMax == null || x > xMax as Numeric){
+						ptLast = pt;
+					}
+				}
 
-					var y = pt.y;
-					if(y != null){
-						var yMin = (ptMin != null) ? ptMin.y : null;
-						var yMax = (ptMax != null) ? ptMax.y : null;
-						if(yMin == null || y < yMin as Numeric){
-							ptMin = pt;
-						}
-						if(yMax == null || y > yMax as Numeric){
-							ptMax = pt;
-						}
+				var y = pt.y;
+				if(y != null){
+					var yMin = (ptMin != null) ? ptMin.y : null;
+					var yMax = (ptMax != null) ? ptMax.y : null;
+					if(yMin == null || y < yMin as Numeric){
+						ptMin = pt;
 					}
-				}while(pts.next());
+					if(yMax == null || y > yMax as Numeric){
+						ptMax = pt;
+					}
+				}
+
+				pt = pts.next() as DataPoint;
 			}
-		}
-
-		function reset() as DataPoint|Null{
-/*
-			index = pts.size() > 0 ? 0 : -1;
-			return (index >= 0) ? pts[index] : null;
-*/
-			return pts.first() ? pts.current() as DataPoint : null;
-		}
-		function next() as DataPoint|Null{
-/*
-			index = pts.size() > index+1 ? index+1 : -1;
-			return (index >= 0) ? pts[index] : null;
-*/
-			return pts.next() ? pts.current() as DataPoint : null;
-		}
-		function size() as Number{
-			return pts.size();
 		}
 	}
 }
