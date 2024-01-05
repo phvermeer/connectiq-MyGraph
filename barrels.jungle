@@ -1,0 +1,6 @@
+# Do not hand edit this file. To make changes run the
+# "Configure Monkey Barrels" command.
+
+MyMath = [d:\Software\Garmin\ConnectIQ\PeterApp2\barrels\MyMath\monkey.jungle]
+#base.barrelPath = $(base.barrelPath);$(MyMath)
+base.sourcePath = $(base.sourcePath);$(MyMath)
