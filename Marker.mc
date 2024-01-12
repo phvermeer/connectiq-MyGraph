@@ -2,7 +2,9 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 import Toybox.Graphics;
 
-module MyGraph{
+module MyBarrel{
+    (:graph)
+    module Graph{
     class Marker extends WatchUi.Drawable{
         var serie as Serie;
         var color as ColorType;
@@ -90,4 +92,5 @@ module MyGraph{
             return h;
         }
     }
+}
 }

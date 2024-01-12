@@ -1,9 +1,10 @@
 import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
-import MyMath;
 
-module MyGraph{
+module MyBarrel{
+    (:graph)
+    module Graph{
 
 	enum DrawStyle {
 		DRAW_STYLE_FILLED = 0x0,
@@ -92,11 +93,11 @@ module MyGraph{
 							// check if area within limits is crossed
 							if(!skipPrev && !(outsideLimits && outsideLimitsPrev)){
 								if(outsideLimits){
-									var xy = MyMath.interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
+									var xy = Math2.interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
 									x = xy[0];
 									y = xy[1];
 								}else if(outsideLimitsPrev){
-									var xy = MyMath.interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
+									var xy = Math2.interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
 									xPrev = xy[0];
 									yPrev = xy[1];
 								}
@@ -129,11 +130,11 @@ module MyGraph{
 
 							if(!(outsideLimits && outsideLimitsPrev)){
 								if(outsideLimits){
-									var xy = MyMath.interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
+									var xy = Math2.interpolateXY(x, y, xPrev, yPrev, xMin, xMax, yMin, yMax);
 									x = xy[0];
 									y = xy[1];
 								}else if(outsideLimitsPrev){
-									var xy = MyMath.interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
+									var xy = Math2.interpolateXY(xPrev, yPrev, x, y, xMin, xMax, yMin, yMax);
 									xPrev = xy[0];
 									yPrev = xy[1];
 								}
@@ -152,7 +153,7 @@ module MyGraph{
 								// change color at xSplit
 								if(xColor2 != null && xPrev < xColor2 && x >= xColor2){
 									// add additional point for xCurrent
-									var yColor2 = MyMath.interpolateY(xPrev, yPrev, x, y, xColor2);
+									var yColor2 = Math2.interpolateY(xPrev, yPrev, x, y, xColor2);
 									xys.add([xColor2, yColor2] as Array<Numeric>);
 									xys.add([xColor2, locY + height] as Array<Numeric>);
 									dc.fillPolygon(xys);
@@ -257,4 +258,5 @@ module MyGraph{
 			updateStatistics();
 		}
 	}
+}
 }

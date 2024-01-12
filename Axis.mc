@@ -1,6 +1,8 @@
 import Toybox.Lang;
 
-module MyGraph{
+module MyBarrel{
+    (:graph)
+    module Graph{
     class Axis{
         var min as Numeric;
         var max as Numeric;
@@ -16,4 +18,5 @@ module MyGraph{
                 : 0f;
         }
     }
+}
 }

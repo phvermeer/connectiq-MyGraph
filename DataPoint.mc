@@ -1,7 +1,9 @@
 import Toybox.Lang;
 import Toybox.Time;
 
-module MyGraph{
+module MyBarrel{
+    (:graph)
+    module Graph{
 	class DataPoint{
 		var x as Numeric;
 		var y as Numeric|Null;
@@ -31,11 +33,12 @@ module MyGraph{
 				var y1 = y - yPre;
 				var y2 = yPost - yPre;
 
-				//return MyMath.abs(0.5 * (xPre * y + x * yPost + xPost * yPre - xPre * yPost - x * yPre - xPost * y));
-				return MyMath.abs(0.5 * (x1 * y2 - x2 * y1));
+				//return Math2.abs(0.5 * (xPre * y + x * yPost + xPost * yPre - xPre * yPost - x * yPre - xPost * y));
+				return Math2.abs(0.5 * (x1 * y2 - x2 * y1));
 			}else{
 				return null;
 			}
 		}
 	}
+}
 }

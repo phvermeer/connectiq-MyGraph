@@ -2,7 +2,9 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 import Toybox.Graphics;
 
-module MyGraph{
+module MyBarrel{
+    (:graph)
+    module Graph{
 	class Trend extends WatchUi.Drawable{
 		var xAxis as Axis;
 		var yAxis as Axis;
@@ -114,4 +116,5 @@ module MyGraph{
 			}
 		}
 	}
+}
 }
